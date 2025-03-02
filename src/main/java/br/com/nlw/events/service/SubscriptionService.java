@@ -1,5 +1,6 @@
 package br.com.nlw.events.service;
 
+import br.com.nlw.events.dto.SubscriptionRankingByUser;
 import br.com.nlw.events.dto.SubscriptionRankingItem;
 import br.com.nlw.events.dto.SubscriptionResponse;
 import br.com.nlw.events.exception.EventNotFoundException;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 public class SubscriptionService {
@@ -65,5 +67,18 @@ public class SubscriptionService {
             throw new EventNotFoundException("Ranking do evento "+prettyName+" não existe");
         }
         return subRepo.generateRanking(evt.getEventId());
+    }
+
+    public SubscriptionRankingByUser getRankingByUser(String prettyName, Integer userId){
+        List<SubscriptionRankingItem> ranking = getCompleteRanking(prettyName);
+
+        SubscriptionRankingItem item = ranking.stream().filter(i->i.userId().equals(userId)).findFirst().orElse(null);
+        if (item == null) {
+            throw new UserIndicatorNotFoundException("Não há indicação do usuário "+userId);
+        }
+        Integer posicao = IntStream.range(0, ranking.size())
+                         .filter(pos -> ranking.get(pos).userId().equals(userId))
+                         .findFirst().getAsInt();
+        return new SubscriptionRankingByUser(item, posicao+1);
     }
 }
